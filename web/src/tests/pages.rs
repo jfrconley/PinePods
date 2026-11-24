@@ -3,7 +3,7 @@
 //! `wasm-pack test --headless --chrome -- --features server_build,browser_tests`
 
 use gloo_timers::future::TimeoutFuture;
-use i18nrs::yew::{I18nProvider, I18nProviderConfig};
+use crate::components::i18n::TranslationProvider;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use wasm_bindgen::JsCast;
@@ -57,11 +57,6 @@ struct HarnessProps {
 #[function_component(Harness)]
 fn harness(props: &HarnessProps) -> Html {
     let translations = HashMap::from([("en", include_str!("../translations/en.json"))]);
-    let config = I18nProviderConfig {
-        translations,
-        default_language: "en".to_string(),
-        ..Default::default()
-    };
     let page = match props.page {
         Page::Discover => html! { <Discover /> },
         Page::Downloads => html! { <Downloads /> },
@@ -79,9 +74,9 @@ fn harness(props: &HarnessProps) -> Html {
         Page::Stats => html! { <UserStats /> },
     };
     html! {
-        <I18nProvider ..config>
+        <TranslationProvider translations={translations}>
             <BrowserRouter>{ page }</BrowserRouter>
-        </I18nProvider>
+        </TranslationProvider>
     }
 }
 
@@ -273,6 +268,48 @@ async fn the_stats_page_shows_the_servers_numbers() {
     .await;
     assert_shows(&shown, "321");
     assert_shows(&shown, "987");
+}
+
+fn podcast_with_counts() -> Value {
+    json!({ "pods": [{
+        "podcastid": 5,
+        "podcastname": "Counted Show",
+        "artworkurl": null,
+        "description": "A show",
+        "episodecount": 742,
+        "websiteurl": "",
+        "feedurl": "https://example.test/feed.xml",
+        "author": "Someone",
+        "categories": null,
+        "explicit": false,
+        "podcastindexid": 0,
+        "unplayed_count": 19,
+    }] })
+}
+
+#[wasm_bindgen_test]
+async fn the_podcasts_page_counts_every_episode_by_default() {
+    let shown = shown_when_signed_in(
+        Page::Podcasts,
+        json!({ "/api/data/return_pods/2": podcast_with_counts() }),
+    )
+    .await;
+    assert_shows(&shown, "742");
+    assert!(!shown.contains("19"), "unplayed count shown without the setting: {shown}");
+}
+
+#[wasm_bindgen_test]
+async fn the_podcasts_page_counts_unplayed_episodes_when_chosen() {
+    let shown = shown_when_signed_in(
+        Page::Podcasts,
+        json!({
+            "/api/data/return_pods/2": podcast_with_counts(),
+            "/api/data/get_podcast_count_display/2": { "user_id": 2, "display": "unplayed" },
+        }),
+    )
+    .await;
+    assert_shows(&shown, "19");
+    assert!(!shown.contains("742"), "total shown instead of unplayed: {shown}");
 }
 
 // Signing in.

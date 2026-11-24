@@ -198,6 +198,8 @@ fn create_data_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(handlers::auth::update_auto_complete_seconds))
         .routes(routes!(handlers::auth::get_queue_add_position))
         .routes(routes!(handlers::auth::update_queue_add_position))
+        .routes(routes!(handlers::auth::get_podcast_count_display))
+        .routes(routes!(handlers::auth::update_podcast_count_display))
         .routes(routes!(handlers::auth::user_admin_check))
         .routes(routes!(handlers::auth::import_opml))
         .routes(routes!(handlers::auth::import_progress))
@@ -222,6 +224,7 @@ fn create_data_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(handlers::podcasts::get_time_info))
         .routes(routes!(handlers::podcasts::check_podcast))
         .routes(routes!(handlers::podcasts::check_episode_in_db))
+        .routes(routes!(handlers::podcasts::resolve_feed_episode))
         .routes(routes!(handlers::podcasts::queue_episode))
         .routes(routes!(handlers::podcasts::queue_episode_to_top))
         .routes(routes!(handlers::nowplaying::now_playing_devices))
@@ -269,9 +272,11 @@ fn create_data_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(handlers::settings::extend_shared_link))
         .routes(routes!(handlers::podcasts::increment_played))
         .routes(routes!(handlers::podcasts::record_listen_duration))
+        .routes(routes!(handlers::progress::record_progress))
         .routes(routes!(handlers::podcasts::get_podcast_id_from_ep_id))
         .routes(routes!(handlers::podcasts::get_stats))
         .routes(routes!(handlers::podcasts::get_extended_stats))
+        .routes(routes!(handlers::podcasts::get_listening_report))
         .routes(routes!(handlers::podcasts::get_pinepods_version))
         .routes(routes!(handlers::podcasts::search_data))
         .routes(routes!(handlers::podcasts::proxy_search))
@@ -480,6 +485,9 @@ fn create_task_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(handlers::websocket::get_user_tasks))
         .routes(routes!(handlers::websocket::get_active_tasks))
         .routes(routes!(handlers::websocket::get_task_status))
+        .routes(routes!(handlers::websocket::clear_finished_tasks))
+        .routes(routes!(handlers::websocket::dismiss_task))
+        .routes(routes!(handlers::websocket::cancel_task))
 }
 
 fn create_async_routes() -> Router<AppState> {
