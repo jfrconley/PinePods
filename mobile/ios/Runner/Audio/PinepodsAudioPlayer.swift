@@ -641,8 +641,16 @@ class PinepodsAudioPlayer: NSObject {
         let end = min(skipSegments[index].end, duration)
         let target = CMTime(seconds: end, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
         skipSeekInFlight = true
+        // AVPlayer keeps playing already-decoded audio until an exact seek
+        // completes, which on a remote MP3 can take ~1s; mute so the start of
+        // the skipped range isn't heard. isMuted (not volume) so the sleep-timer
+        // fade is untouched. The completion always runs, even when cancelled.
+        player.isMuted = true
         player.seek(to: target, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
-            DispatchQueue.main.async { self?.skipSeekInFlight = false }
+            DispatchQueue.main.async {
+                self?.player?.isMuted = false
+                self?.skipSeekInFlight = false
+            }
         }
     }
 
